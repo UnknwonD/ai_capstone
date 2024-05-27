@@ -11,6 +11,7 @@ import tensorflow as tf
 from keras.models import load_model
 import threading
 import queue
+from django.http import JsonResponse
 
 # 전역 변수로 모델을 로드합니다.
 video_model = load_model("video_3D_model.h5")
@@ -39,17 +40,6 @@ def preprocess_audio(audio_path, sample_rate=22050, n_fft=2048, hop_length=512, 
     return np.array(segments)
 
 def preprocess_video_every_3_seconds(video_path: str, frame_size: tuple, frame_rate=3):
-    """
-    Extracts frames every 3 seconds from a video file, resizing them to frame_size and converting to grayscale.
-    
-    Args:
-    video_path (str): Path to the video file.
-    frame_size (tuple): Size (height, width) to resize frames.
-    frame_rate (int): Number of frames to extract per second within the 3-second window.
-
-    Returns:
-    List[numpy.ndarray]: List of sequences, where each sequence is a numpy array of shape (num_frames, height, width, 1).
-    """
     vidcap = cv2.VideoCapture(video_path)
     fps = vidcap.get(cv2.CAP_PROP_FPS)
     interval_frames = int(fps * 3)
@@ -87,30 +77,12 @@ def preprocess_video_every_3_seconds(video_path: str, frame_size: tuple, frame_r
     vidcap.release()
     return np.array(sequences)
 
-
-
-# def pipeline_video(video_path):
-#     audio_path = './test.wav'
-#     audio = extract_audio(video_path, audio_path)
-#     audio_processed = preprocess_audio(audio)
-    
-#     # 모델을 이용한 예측 로직
-#     # video_predictions = video_model.predict(...)  # 비디오 모델 예측 로직 추가
-#     audio_predictions = audio_model.predict(audio_processed)  # 오디오 모델 예측 로직 추가
-    
-#     # 결과 처리
-#     return audio_predictions  # 예시로 오디오 처리 결과만 반환
-
 def pipeline_video(video_path:str):
-    
     audio_path = './test.wav'
     audio = extract_audio(video_path, audio_path)
     audio = preprocess_audio(audio)
 
     video = preprocess_video_every_3_seconds(video_path, (256, 256), 3)
-
-    print(len(video))
-    print(len(audio))
 
     video_model = load_model("video_3D_model.h5")
     audio_model = load_model("audio_comp_model.h5")
@@ -120,7 +92,59 @@ def pipeline_video(video_path:str):
     
     return video_output, audio_output
 
-# 뷰 정의
+def compute_ensemble(video_data, audio_data, video_weight, audio_weight, threshold):
+    min_length = min(video_data.shape[0], audio_data.shape[0])
+    video_data = video_data[:min_length]
+    audio_data = audio_data[:min_length]
+    
+    ensemble_scores = (video_data * video_weight + audio_data * audio_weight) / (video_weight + audio_weight)
+    ensemble_labels = ensemble_scores.argmax(axis=1)
+
+    high_confidence_twos = ensemble_scores[:, 2] >= threshold
+    ensemble_labels[high_confidence_twos] = 2
+    
+    return ensemble_labels, ensemble_scores
+
+def process_video_data(video_path):
+    video_data, audio_data = pipeline_video(video_path)
+
+    new_audio_data = np.zeros((audio_data.shape[0], audio_data.shape[1] + 1))
+    for i, audio_row in enumerate(audio_data):
+        half_value = audio_row[1] / 2
+        new_audio_data[i][0] = round(audio_row[0], 5)
+        new_audio_data[i][1] = round(half_value, 5)
+        new_audio_data[i][2] = round(half_value, 5)
+
+    new_video_data = np.round(video_data, 5)
+
+    video_weight = 0.5  # 초기값
+    audio_weight = 1 - video_weight
+    threshold = 0.8
+    
+
+    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
+    print('ensemble_output:', ensemble_output)
+    return ensemble_output
+
+
+#처음 프로세스 이후에 display_video.html에서 입력했을 때 모델 작동
+def process_video_data_after(video_path, video_weight, threshold):
+    video_data, audio_data = pipeline_video(video_path)
+
+    new_audio_data = np.zeros((audio_data.shape[0], audio_data.shape[1] + 1))
+    for i, audio_row in enumerate(audio_data):
+        half_value = audio_row[1] / 2
+        new_audio_data[i][0] = round(audio_row[0], 5)
+        new_audio_data[i][1] = round(half_value, 5)
+        new_audio_data[i][2] = round(half_value, 5)
+
+    new_video_data = np.round(video_data, 5)
+    audio_weight = 1 - video_weight
+
+    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
+    print('ensemble_output after:', ensemble_output)
+    return ensemble_output
+
 def upload_video(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
@@ -128,13 +152,8 @@ def upload_video(request):
             video = form.save()
             video_file_path = video.input_video.path
 
-            # AI 영상 처리 함수 호출
-            predictions = pipeline_video(video_file_path)
-            highlightData = process_predictions_to_highlights(predictions)  # 데이터 처리 함수
-
-            # JSON 형식으로 변환
-            highlight_data_json = json.dumps(highlightData)
-            print('predictions', predictions)
+            predictions = process_video_data(video_file_path)
+            highlight_data_json = json.dumps(predictions.tolist())
 
             return render(request, 'display_video.html', {
                 'video': video,
@@ -144,13 +163,25 @@ def upload_video(request):
         form = VideoForm()
     return render(request, 'upload_video.html', {'form': form})
 
-def process_predictions_to_highlights(predictions):
-    # 예측 결과를 분석하여 하이라이트 데이터 생성
-    # 각 예측의 argmax를 이용하여 하이라이트 여부를 결정
-    highlights = [int(np.argmax(score)) for score in predictions]
-    print('highlights:', highlights)
-    return highlights
-
 def display_video(request, video_id):
     video = get_object_or_404(Video, pk=video_id)
     return render(request, 'display_video.html', {'video': video})
+
+#가중치 프로세싱
+def process_weights(request, video_id):
+    if request.method == 'POST':
+        video = get_object_or_404(Video, pk=video_id)
+        video_file_path = video.input_video.path
+        video_weight = float(request.POST.get('video_weight', 0.5))
+        threshold = float(request.POST.get('threshold', 0.7))
+
+        predictions = process_video_data_after(video_file_path, video_weight, threshold)
+        highlight_data_json = json.dumps(predictions.tolist())
+
+        return render(request, 'display_video.html', {
+            'video': video,
+            'highlightData': highlight_data_json,
+            'video_weight': video_weight,
+            'threshold': threshold,
+        })
+    return JsonResponse({'error': 'Invalid request'}, status=400)

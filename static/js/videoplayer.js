@@ -13,8 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const highlightData = JSON.parse(highlightDataElement.textContent);
     const segmentDuration = 3; // 각 길이 (초)
 
-
-    //king
+    // king
     const slider = document.getElementById('slider_king');
 
     console.log('highlightData:', highlightData);
@@ -127,25 +126,22 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     progress.addEventListener('click', scrub);
-    
-    
+
     // Update the slider's max value when the video's metadata is loaded
     video.addEventListener('loadedmetadata', () => {
         slider.max = video.duration;
-        console.log("King")
+        console.log("King");
     });
-    
+
     // Update the video's current time when the slider value changes
     slider.addEventListener('input', () => {
         video.currentTime = slider.value;
-        console.log("HMM")
+        console.log("HMM");
     });
-    
+
     // Update the slider's value as the video plays
     video.addEventListener('timeupdate', () => {
         slider.value = video.currentTime;
-        console.log("HAH")
+        console.log("HAH");
     });
-
 });
-

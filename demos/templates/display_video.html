@@ -1,7 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -54,20 +53,15 @@
             width: 1rem;
             height: 1rem;
         }
+
+
+        
     </style>
-    
 </head>
-
-
 <body id="page-top">
 
-    <!-- Page Wrapper -->
     <div id="wrapper">
-
-        <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
-
-            <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="http://127.0.0.1:8000/">
                 <div class="sidebar-brand-icon rotate-n-15">
                     <i class="fas fa-laugh-wink"></i>
@@ -75,28 +69,16 @@
                 <img src="{% static 'img/logo.png' %}" height="40px">
                 <div class="sidebar-brand-text mx-3">영상 뽑아 <sup></sup></div>
             </a>
-
-            <!-- Divider -->
             <hr class="sidebar-divider my-0">
-
-            <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
                 <a class="nav-link" href="index.html">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>홈</span></a>
             </li>
-
-            <!-- Divider -->
             <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                편집
-            </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
+            <div class="sidebar-heading">편집</div>
             <li class="nav-item">
-                <a class="nav-link collapsed" >
+                <a class="nav-link collapsed">
                     <i class="fas fa-fw fa-cog"></i>
                     <span>영상편집</span>
                 </a>
@@ -108,10 +90,8 @@
                     </div>
                 </div>
             </li>
-
-            <!-- Nav Item - Utilities Collapse Menu -->
             <li class="nav-item">
-                <a class="nav-link collapsed" >
+                <a class="nav-link collapsed">
                     <i class="fas fa-fw fa-wrench"></i>
                     <span>음성편집</span>
                 </a>
@@ -126,72 +106,33 @@
                     </div>
                 </div>
             </li>
-
-            <!-- Divider -->
             <hr class="sidebar-divider">
-
-            <!-- Heading -->
-            <div class="sidebar-heading">
-                기록
-            </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
+            <div class="sidebar-heading">기록</div>
             <li class="nav-item">
-                <a class="nav-link collapsed"  >
+                <a class="nav-link collapsed">
                     <i class="fas fa-fw fa-folder"></i>
                     <span>영상기록</span>
                 </a>
             </li>
-
-            <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" >
+                <a class="nav-link">
                     <i class="fas fa-fw fa-chart-area"></i>
                     <span>음성기록</span></a>
             </li>
-
-            <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" >
+                <a class="nav-link">
                     <i class="fas fa-fw fa-table"></i>
                     <span>내 페이지</span></a>
             </li>
-
-            <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
-
-            <!-- Sidebar Toggler (Sidebar) -->
-            <!-- <div class="text-center d-none d-md-inline">
-                <button class="rounded-circle border-0" id="sidebarToggle"></button>
-            </div> -->
-
-            <!-- Sidebar Message -->
-            <!-- <div class="sidebar-card d-none d-lg-flex">
-                <img class="sidebar-card-illustration mb-2" src="{% static 'img/undraw_rocket.svg' %}" alt="...">
-                <p class="text-center mb-2"><strong>SB Admin Pro</strong> is packed with premium features, components, and more!</p>
-                <a class="btn btn-success btn-sm" href="https://startbootstrap.com/theme/sb-admin-pro">Upgrade to Pro!</a>
-            </div> -->
-
         </ul>
-        <!-- End of Sidebar -->
-
-        <!-- Content Wrapper -->
         <div id="content-wrapper" class="d-flex flex-column">
-
-            <!-- Main Content -->
             <div id="content">
-
-                <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-
-                    <!-- Sidebar Toggle (Topbar) -->
                     <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
                         <i class="fa fa-bars"></i>
                     </button>
-
-                    <!-- Topbar Search -->
-                    <form
-                        class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
+                    <form class="d-none d-sm-inline-block form-inline mr-auto ml-md-3 my-2 my-md-0 mw-100 navbar-search">
                         <div class="input-group">
                             <input type="text" class="form-control bg-light border-0 small" placeholder="검색하기..."
                                 aria-label="Search" aria-describedby="basic-addon2">
@@ -202,17 +143,12 @@
                             </div>
                         </div>
                     </form>
-
-                    <!-- Topbar Navbar -->
                     <ul class="navbar-nav ml-auto">
-
-                        <!-- Nav Item - Search Dropdown (Visible Only XS) -->
                         <li class="nav-item dropdown no-arrow d-sm-none">
                             <a class="nav-link dropdown-toggle" href="#" id="searchDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-search fa-fw"></i>
                             </a>
-                            <!-- Dropdown - Messages -->
                             <div class="dropdown-menu dropdown-menu-right p-3 shadow animated--grow-in"
                                 aria-labelledby="searchDropdown">
                                 <form class="form-inline mr-auto w-100 navbar-search">
@@ -229,16 +165,12 @@
                                 </form>
                             </div>
                         </li>
-
-                        <!-- Nav Item - Alerts -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-bell fa-fw"></i>
-                                <!-- Counter - Alerts -->
                                 <span class="badge badge-danger badge-counter"></span>
                             </a>
-                            <!-- Dropdown - Alerts -->
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="alertsDropdown">
                                 <h6 class="dropdown-header">
@@ -280,16 +212,12 @@
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Show All Alerts</a>
                             </div>
                         </li>
-
-                        <!-- Nav Item - Messages -->
                         <li class="nav-item dropdown no-arrow mx-1">
                             <a class="nav-link dropdown-toggle" href="#" id="messagesDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fas fa-envelope fa-fw"></i>
-                                <!-- Counter - Messages -->
                                 <span class="badge badge-danger badge-counter"></span>
                             </a>
-                            <!-- Dropdown - Messages -->
                             <div class="dropdown-list dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="messagesDropdown">
                                 <h6 class="dropdown-header">
@@ -297,8 +225,7 @@
                                 </h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg"
-                                            alt="...">
+                                        <img class="rounded-circle" src="img/undraw_profile_1.svg" alt="...">
                                         <div class="status-indicator bg-success"></div>
                                     </div>
                                     <div class="font-weight-bold">
@@ -309,8 +236,7 @@
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg"
-                                            alt="...">
+                                        <img class="rounded-circle" src="img/undraw_profile_2.svg" alt="...">
                                         <div class="status-indicator"></div>
                                     </div>
                                     <div>
@@ -321,8 +247,7 @@
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg"
-                                            alt="...">
+                                        <img class="rounded-circle" src="img/undraw_profile_3.svg" alt="...">
                                         <div class="status-indicator bg-warning"></div>
                                     </div>
                                     <div>
@@ -331,32 +256,16 @@
                                         <div class="small text-gray-500">Morgan Alvarez · 2d</div>
                                     </div>
                                 </a>
-                                <a class="dropdown-item d-flex align-items-center" href="#">
-                                    <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="https://source.unsplash.com/Mv9hjnEUHR4/60x60"
-                                            alt="...">
-                                        <div class="status-indicator bg-success"></div>
-                                    </div>
-                                    <div>
-                                        <div class="text-truncate">Am I a good boy? The reason I ask is because someone
-                                            told me that people say this to all dogs, even if they aren't good...</div>
-                                        <div class="small text-gray-500">Chicken the Dog · 2w</div>
-                                    </div>
-                                </a>
                                 <a class="dropdown-item text-center small text-gray-500" href="#">Read More Messages</a>
                             </div>
                         </li>
-
                         <div class="topbar-divider d-none d-sm-block"></div>
-
-                        <!-- Nav Item - User Information -->
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">관리자</span>
                                 <img class="img-profile rounded-circle" src="{% static 'img/undraw_profile.svg' %}">
                             </a>
-                            <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
                                 <a class="dropdown-item" href="#">
@@ -378,27 +287,16 @@
                                 </a>
                             </div>
                         </li>
-
                     </ul>
-
                 </nav>
-                <!-- End of Topbar -->
 
-                <!-- Begin Page Content -->
                 <div class="container-fluid">
-
-                    <!-- Page Heading -->
                     <div class="d-sm-flex align-items-center justify-content-between mb-4">
                         <h1 class="h3 mb-0 text-gray-800">영상편집</h1>
                         <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i
                                 class="fas fa-download fa-sm text-white-50"></i> Upload</a>
                     </div>
-
-                    <!-- Content Row -->
                     <div class="row">
-
-
-                        <!-- Pending Requests Card Example -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-warning shadow h-100 py-2">
                                 <div class="card-body">
@@ -411,21 +309,20 @@
                                                     Your browser does not support the video tag.
                                                 </video>
                                             </div>
-                        
                                             {% if video.output_video %}
                                             <h1>Processed Video</h1>
                                             <video width="640" height="360">
                                                 <source src="{{ video.output_video.url }}" type="video/mp4">
                                                 Your browser does not support the video tag.
                                             </video>
-                                            {% else %}
-                                            
                                             {% endif %}
                                             
+
+                                            <!-- 프로그레스 바-->
                                             <div class="player__controls">
                                                 <div class="progress" id="progress">
                                                     <div class="progress__filled"></div>
-                                                    <input type="range" id="slider_king" min="0" max="100" value="0", style="width : 100%;">
+                                                    <input type="range" id="slider_king" min="0" max="100" value="0" style="width : 100%;">
                                                 </div>
                                                 <div class="control-buttons">
                                                     <button id="togglePlay" title="Toggle Play">►</button>
@@ -447,20 +344,29 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                                
+
+                                            <!-- 가중치 부분-->
+                                            <form method="POST" action="{% url 'process_weights' video.id %}" enctype="multipart/form-data">
+                                                {% csrf_token %}
+                                                <div class="slider-container">
+                                                    <label for="video_weight_slider">Video Weight:</label>
+                                                    <input type="range" id="video_weight_slider" name="video_weight" min="0" max="1" step="0.01" value="0.5" oninput="this.nextElementSibling.value = this.value">
+                                                    <output>0.5</output>
+                                                </div>
+                                                <div>
+                                                    <label for="threshold_input">Threshold:</label>
+                                                    <input type="text" id="threshold_input" name="threshold" value="0.7">
+                                                </div>
+                                                <button type="submit">Apply</button>
+                                            </form>
                                             
-                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        
-                        
+                    </div>
 
-                    <!-- Content Row -->
-
-            <!-- Footer -->
             <footer class="sticky-footer bg-white">
                 <div class="container my-auto">
                     <div class="copyright text-center my-auto">
@@ -468,20 +374,12 @@
                     </div>
                 </div>
             </footer>
-            <!-- End of Footer -->
-
         </div>
-        <!-- End of Content Wrapper -->
-
     </div>
-    <!-- End of Page Wrapper -->
 
-    <!-- Scroll to Top Button-->
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
-
-    <!-- Logout Modal-->
     <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
         aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -501,30 +399,17 @@
         </div>
     </div>
 
-    <!-- Bootstrap core JavaScript-->
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Core plugin JavaScript-->
     <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
-
-    <!-- Custom scripts for all pages-->
     <script src="js/sb-admin-2.min.js"></script>
-
-    <!-- Page level plugins -->
-    <script src="vendor/chart.js/Chart.min.js"></script>
-
-    <!-- Page level custom scripts -->
-    <script src="js/demo/chart-area-demo.js"></script>
-    <script src="js/demo/chart-pie-demo.js"></script>
+    
     
 
 
-</body>
-<script type="application/json" id="highlightData">
+    <script type="application/json" id="highlightData">
         {{ highlightData|escapejs }}
     </script>
-
-    <!-- JavaScript 파일을 불러옵니다 -->
     <script src="{% static 'js/videoplayer.js' %}"></script>
+</body>
 </html>

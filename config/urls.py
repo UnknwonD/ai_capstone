@@ -16,18 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-
-'''urlpatterns = [
-    path("admin/", admin.site.urls),
-]'''
-
-from django.urls import path
-from demos.views import upload_video, display_video
+from demos import views  # demos 앱의 views 모듈에서 가져오기
 
 urlpatterns = [
-    path('', upload_video, name='home'),  # 홈페이지로 설정
-    path('upload/', upload_video, name='upload_video'),
-    path('video/<int:video_id>/', display_video, name='display_video'),
+    path('', views.upload_video, name='home'),  # 홈페이지로 설정
+    path('upload/', views.upload_video, name='upload_video'),
+    path('video/<int:video_id>/', views.display_video, name='display_video'),
+    path('process_weights/<int:video_id>/', views.process_weights, name='process_weights'),
 ]
 
 from django.conf import settings
@@ -35,4 +30,3 @@ from django.conf.urls.static import static
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
