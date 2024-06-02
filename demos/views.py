@@ -11,6 +11,7 @@ import tensorflow as tf
 from keras.models import load_model
 import threading
 import queue
+from datetime import datetime
 from django.http import JsonResponse
 
 # 전역 변수로 모델을 로드합니다.
@@ -25,6 +26,73 @@ def extract_audio(video_path, audio_path):
     video_clip.close()
     return audio_path
 
+def get_max_values_and_indices(video_data, audio_data, video_weight, audio_weight, threshold, ratio):
+    
+    min_length = min(video_data.shape[0], audio_data.shape[0])
+    video_data = video_data[:min_length]
+    audio_data = audio_data[:min_length]
+    
+    video_length = (ratio // 3) * 3
+    
+    ensemble_scores = (video_data * video_weight + audio_data * audio_weight) / (video_weight + audio_weight)
+    ensemble_labels = ensemble_scores.argmax(axis=1)
+
+    high_confidence_twos = ensemble_scores[:, 2] >= threshold
+    ensemble_labels[high_confidence_twos] = 2
+    
+    output = [(i, ensemble_labels[i], max(ensemble_scores[i])) for i in range(min_length)]
+    
+    sorted_data = sorted(output, key=lambda x: (x[1], x[2]), reverse=True)
+    sorted_data = sorted(sorted_data[:video_length], key=lambda x: x[0])
+    
+    return sorted_data
+
+def preprocess_shorts_only_frame(video_path: str, label: list, output_path: str):
+    vidcap = cv2.VideoCapture(video_path)
+    
+    fps = vidcap.get(cv2.CAP_PROP_FPS)
+    
+    interval = int(fps * 3)
+    total_frames = int(vidcap.get(cv2.CAP_PROP_FRAME_COUNT))
+    sequences = []
+    
+    for lbl in label:
+        index = lbl[0]
+        start_frame = float(index * interval)
+
+        if start_frame >= total_frames:
+            continue
+        
+        vidcap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+        
+        current_pos = vidcap.get(cv2.CAP_PROP_POS_FRAMES)
+        
+        if current_pos != start_frame:
+            continue
+
+        frames = []
+        for _ in range(interval):
+            success, frame = vidcap.read()
+            if not success:
+                break
+            
+            frames.append(frame)
+        
+        if len(frames) == interval:
+            sequences.extend(frames)
+    
+    if sequences:
+        height, width, layers = sequences[0].shape
+        size = (width, height)
+        out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*'mp4v'), fps, size)
+
+        for frame in sequences:
+            out.write(frame)
+        
+        out.release()
+    
+    vidcap.release()
+    
 def preprocess_audio(audio_path, sample_rate=22050, n_fft=2048, hop_length=512, n_mels=130, segment_duration=3):
     audio, sr = librosa.load(audio_path, sr=sample_rate)
     segment_length = int(sr * segment_duration)
@@ -92,19 +160,6 @@ def pipeline_video(video_path:str):
     
     return video_output, audio_output
 
-def compute_ensemble(video_data, audio_data, video_weight, audio_weight, threshold):
-    min_length = min(video_data.shape[0], audio_data.shape[0])
-    video_data = video_data[:min_length]
-    audio_data = audio_data[:min_length]
-    
-    ensemble_scores = (video_data * video_weight + audio_data * audio_weight) / (video_weight + audio_weight)
-    ensemble_labels = ensemble_scores.argmax(axis=1)
-
-    high_confidence_twos = ensemble_scores[:, 2] >= threshold
-    ensemble_labels[high_confidence_twos] = 2
-    
-    return ensemble_labels, ensemble_scores
-
 def process_video_data(video_path):
     video_data, audio_data = pipeline_video(video_path)
 
@@ -121,10 +176,17 @@ def process_video_data(video_path):
     audio_weight = 1 - video_weight
     threshold = 0.8
     
-
-    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
-    print('ensemble_output:', ensemble_output)
-    return ensemble_output
+    ################################################################################################
+    ################################################ << 여기 5에다 html에서 정보 받와엇 넣으면 됩니다. >>
+    sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, 5) 
+    
+    current_time = str(datetime.now().strftime("%Y%m%d_%H%M%S")) + ".mp4"
+    output_path = os.path.join("/Users/idaeho/Documents/GitHub/project_shorts/", current_time)
+    
+    preprocess_shorts_only_frame(video_path, sorted_data, output_path) ###### 이게 동영상 저장하는 부분입니다.
+    
+    print('ensemble_output:', sorted_data) ###### 상위 (지금은) 5개의 정보를 전송합니다.
+    return sorted_data
 
 
 #처음 프로세스 이후에 display_video.html에서 입력했을 때 모델 작동
@@ -139,11 +201,22 @@ def process_video_data_after(video_path, video_weight, threshold):
         new_audio_data[i][2] = round(half_value, 5)
 
     new_video_data = np.round(video_data, 5)
-    audio_weight = 1 - video_weight
 
-    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
-    print('ensemble_output after:', ensemble_output)
-    return ensemble_output
+    video_weight = 0.5  # 초기값
+    audio_weight = 1 - video_weight
+    threshold = 0.8
+    
+    ################################################################################################
+    ################################################ << 여기 5에다 html에서 정보 받와엇 넣으면 됩니다. >>
+    sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, 5) 
+    
+    current_time = str(datetime.now().strftime("%Y%m%d_%H%M%S")) + ".mp4"
+    output_path = os.path.join("/Users/idaeho/Documents/GitHub/project_shorts/", current_time)
+    
+    preprocess_shorts_only_frame(video_path, sorted_data, output_path) ###### 이게 동영상 저장하는 부분입니다.
+    
+    print('ensemble_output:', sorted_data) ###### 상위 (지금은) 5개의 정보를 전송합니다.
+    return sorted_data
 
 def upload_video(request):
     if request.method == 'POST':
