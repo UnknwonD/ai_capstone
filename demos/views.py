@@ -1,7 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
+import os
+import platform
+
+if platform.system() == "Darwin":
+    os.environ["IMAGEIO_FFMPEG_EXE"] = "/opt/homebrew/bin/ffmpeg"
+    os.environ['FFMPEG_BINARY'] = "/opt/homebrew/bin/ffmpeg"
+
 from .models import Video
 from .forms import VideoForm
-import os
+
 import cv2
 import json
 import numpy as np
@@ -13,6 +20,8 @@ import threading
 import queue
 from datetime import datetime
 from django.http import JsonResponse
+from django.core.cache import cache
+
 
 # 전역 변수로 모델을 로드합니다.
 video_model = load_model("video_3D_model.h5")
@@ -26,13 +35,16 @@ def extract_audio(video_path, audio_path):
     video_clip.close()
     return audio_path
 
-def get_max_values_and_indices(video_data, audio_data, video_weight, audio_weight, threshold, ratio):
+def get_max_values_and_indices(video_data, audio_data, video_weight, audio_weight, threshold, video_length, ratio):
     
     min_length = min(video_data.shape[0], audio_data.shape[0])
     video_data = video_data[:min_length]
     audio_data = audio_data[:min_length]
     
-    video_length = (ratio // 3) * 3
+    if video_length < 0:
+        output_length = int(min_length * ratio)
+    else:
+        output_length = (video_length // 3)
     
     ensemble_scores = (video_data * video_weight + audio_data * audio_weight) / (video_weight + audio_weight)
     ensemble_labels = ensemble_scores.argmax(axis=1)
@@ -43,7 +55,7 @@ def get_max_values_and_indices(video_data, audio_data, video_weight, audio_weigh
     output = [(i, ensemble_labels[i], max(ensemble_scores[i])) for i in range(min_length)]
     
     sorted_data = sorted(output, key=lambda x: (x[1], x[2]), reverse=True)
-    sorted_data = sorted(sorted_data[:video_length], key=lambda x: x[0])
+    sorted_data = sorted(sorted_data[:output_length], key=lambda x: x[0])
     
     return sorted_data
 
@@ -160,6 +172,19 @@ def pipeline_video(video_path:str):
     
     return video_output, audio_output
 
+def compute_ensemble(video_data, audio_data, video_weight, audio_weight, threshold):
+    min_length = min(video_data.shape[0], audio_data.shape[0])
+    video_data = video_data[:min_length]
+    audio_data = audio_data[:min_length]
+
+    ensemble_scores = (video_data * video_weight + audio_data * audio_weight) / (video_weight + audio_weight)
+    ensemble_labels = ensemble_scores.argmax(axis=1)
+
+    high_confidence_twos = ensemble_scores[:, 2] >= threshold
+    ensemble_labels[high_confidence_twos] = 2
+
+    return ensemble_labels, ensemble_scores
+
 def process_video_data(video_path):
     video_data, audio_data = pipeline_video(video_path)
 
@@ -172,51 +197,45 @@ def process_video_data(video_path):
 
     new_video_data = np.round(video_data, 5)
 
-    video_weight = 0.5  # 초기값
+    video_weight = 0.4  # 초기값
     audio_weight = 1 - video_weight
     threshold = 0.8
-    
-    ################################################################################################
-    ################################################ << 여기 5에다 html에서 정보 받와엇 넣으면 됩니다. >>
-    sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, 5) 
-    
-    current_time = str(datetime.now().strftime("%Y%m%d_%H%M%S")) + ".mp4"
-    output_path = os.path.join("/Users/idaeho/Documents/GitHub/project_shorts/", current_time)
-    
-    preprocess_shorts_only_frame(video_path, sorted_data, output_path) ###### 이게 동영상 저장하는 부분입니다.
-    
-    print('ensemble_output:', sorted_data) ###### 상위 (지금은) 5개의 정보를 전송합니다.
-    return sorted_data
 
+    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
+    print('ensemble_output:', ensemble_output)
+
+    # Cache the processed data
+    cache.set('new_video_data', new_video_data, timeout=300)  # Cache for 5 minutes
+    cache.set('new_audio_data', new_audio_data, timeout=300)  # Cache for 5 minutes
+
+    return ensemble_output
 
 #처음 프로세스 이후에 display_video.html에서 입력했을 때 모델 작동
-def process_video_data_after(video_path, video_weight, threshold):
-    video_data, audio_data = pipeline_video(video_path)
+def process_video_data_after(video_path, video_weight, threshold, video_length, ratio):
+    new_video_data = cache.get('new_video_data')
+    new_audio_data = cache.get('new_audio_data')
+    print("cached")
 
-    new_audio_data = np.zeros((audio_data.shape[0], audio_data.shape[1] + 1))
-    for i, audio_row in enumerate(audio_data):
-        half_value = audio_row[1] / 2
-        new_audio_data[i][0] = round(audio_row[0], 5)
-        new_audio_data[i][1] = round(half_value, 5)
-        new_audio_data[i][2] = round(half_value, 5)
+    if new_video_data is None or new_audio_data is None:
+        return JsonResponse({'error': 'Cached data not found. Please reprocess the video.'}, status=400)
 
-    new_video_data = np.round(video_data, 5)
-
-    video_weight = 0.5  # 초기값
     audio_weight = 1 - video_weight
-    threshold = 0.8
     
-    ################################################################################################
-    ################################################ << 여기 5에다 html에서 정보 받와엇 넣으면 됩니다. >>
-    sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, 5) 
-    
+
+    sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, video_length, ratio)
+
     current_time = str(datetime.now().strftime("%Y%m%d_%H%M%S")) + ".mp4"
-    output_path = os.path.join("/Users/idaeho/Documents/GitHub/project_shorts/", current_time)
-    
-    preprocess_shorts_only_frame(video_path, sorted_data, output_path) ###### 이게 동영상 저장하는 부분입니다.
-    
-    print('ensemble_output:', sorted_data) ###### 상위 (지금은) 5개의 정보를 전송합니다.
-    return sorted_data
+    output_path = os.path.join("/Users/idaeho/Documents/GitHub/ai_capstone/output_video", current_time)
+
+    print("video processing")
+    preprocess_shorts_only_frame(video_path, sorted_data, output_path)
+
+    print('ensemble_output:', sorted_data)
+
+    ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
+    print('ensemble_output:', ensemble_output)
+
+    return ensemble_output
 
 def upload_video(request):
     if request.method == 'POST':
@@ -226,7 +245,14 @@ def upload_video(request):
             video_file_path = video.input_video.path
 
             predictions = process_video_data(video_file_path)
-            highlight_data_json = json.dumps(predictions.tolist())
+            
+            # print(predictions)
+            # ensemble_output: [(15, 2, 0.36038999897956847)]
+            
+            if type(predictions) == list:
+                highlight_data_json = json.dumps(predictions)
+            else:
+                highlight_data_json = json.dumps(predictions.tolist())
 
             return render(request, 'display_video.html', {
                 'video': video,
@@ -245,16 +271,58 @@ def process_weights(request, video_id):
     if request.method == 'POST':
         video = get_object_or_404(Video, pk=video_id)
         video_file_path = video.input_video.path
-        video_weight = float(request.POST.get('video_weight', 0.5))
-        threshold = float(request.POST.get('threshold', 0.7))
+        # video_weight = float(request.POST.get('video_weight', 0.5))
+        # threshold = float(request.POST.get('threshold', 0.7))
+        
+        # Retrieve selected video categories
 
-        predictions = process_video_data_after(video_file_path, video_weight, threshold)
-        highlight_data_json = json.dumps(predictions.tolist())
+        video_categories = request.POST.get('video_category')
+        video_length = request.POST.get('video_length')
+        
+        ratio = 0
+        
+        print(video_categories)
+        
+        if video_categories == 'shorts':
+            video_length = int(video_length)
+            video_weight = 0.6
+            threshold = 0.6
+            
+        elif video_categories == 'summary':
+            video_length = int(video_length)
+            video_weight = 0.8
+            threshold = 0.5
+            
+        else:
+            ratio = float(video_length)
+            video_length = -1
+            video_weight = 0.9
+            threshold = 0.6
+
+
+        # Process predictions based on categories
+        predictions = process_video_data_after(video_file_path, video_weight, threshold, video_length, ratio)
+        print("ggg")
+        
+        highlight_data_json = json.dumps(predictions, default=convert_to_serializable)
+        print("ddd")
 
         return render(request, 'display_video.html', {
             'video': video,
             'highlightData': highlight_data_json,
             'video_weight': video_weight,
             'threshold': threshold,
+            'video_categories': video_categories,
         })
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+
+def convert_to_serializable(obj):
+    if isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
