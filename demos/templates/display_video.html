@@ -13,6 +13,22 @@
     <link href="{% static 'css/sb-admin-2.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/videobutton.css' %}">
 
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/5.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+        .form-container h2 {
+            margin-bottom: 20px;
+        }
+    </style>
+
     <style>
         .slider-container {
             width: 600px;
@@ -346,26 +362,31 @@
                                             </div>
 
                                             <!-- 가중치 부분-->
-                                            <form method="POST" action="{% url 'process_weights' video.id %}" enctype="multipart/form-data">
-                                                {% csrf_token %}
-                                                <div>
-                                                    <label for="video_category">Which Video to make ?</label>
-                                                    <select name="video_category" id="video_category" onchange="updateVideoLengthOptions()">
-                                                        <option value="shorts">쇼츠영상</option>
-                                                        <option value="summary">요약</option>
-                                                        <option value="editing">편집점</option>
-                                                    </select>
+                                            <div class="container">
+                                                <div class="form-container">
+                                                    <h2 class="text-center">Process Your Video</h2>
+                                                    <form method="POST" action="{% url 'process_weights' video.id %}" enctype="multipart/form-data">
+                                                        {% csrf_token %}
+                                                        <div class="mb-3">
+                                                            <label for="video_category" class="form-label">Which Video to make?</label>
+                                                            <select class="form-select" name="video_category" id="video_category" onchange="updateVideoLengthOptions()">
+                                                                <option value="shorts">쇼츠영상</option>
+                                                                <option value="summary">요약</option>
+                                                                <option value="editing">편집점</option>
+                                                            </select>
+                                                        </div>
+                                                        <div id="video_length_container" class="mb-3">
+                                                            <label for="video_length" class="form-label">Video Length:</label>
+                                                            <select class="form-select" name="video_length" id="video_length">
+                                                                <!-- Options will be populated by JavaScript -->
+                                                            </select>
+                                                        </div>
+                                                        <div class="text-center">
+                                                            <button type="submit" class="btn btn-primary">Apply</button>
+                                                        </div>
+                                                    </form>
                                                 </div>
-                                                
-                                                <div id="video_length_container">
-                                                    <label for="video_length">Video Length:</label>
-                                                    <select name="video_length" id="video_length">
-                                                        <!-- Options will be populated by JavaScript -->
-                                                    </select>
-                                                </div>
-                                                
-                                                <button type="submit">Apply</button>
-                                            </form>
+                                            </div>
                                             
                                         </div>
                                     </div>
@@ -419,6 +440,7 @@
     </script>
     <script src="{% static 'js/videoplayer.js' %}"></script>
 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/5.0.0/js/bootstrap.bundle.min.js"></script>
     <!-- 비디오 골랐을 때 가져오는 값 -->
     <script>
         function updateVideoLengthOptions() {
@@ -434,16 +456,21 @@
                 options = [
                     { value: '15', text: '15 seconds' },
                     { value: '30', text: '30 seconds' },
+                    { value: '45', text: '45 seconds' },
                     { value: '60', text: '1 minute' }
                 ];
             } else if (videoCategory === 'summary') {
                 options = [
+                    { value: '60', text: '1 minutes' },
                     { value: '180', text: '3 minutes' },
                     { value: '300', text: '5 minutes' },
+                    { value: '420', text: '7 minutes' },
                     { value: '600', text: '10 minutes' }
                 ];
             } else if (videoCategory === 'editing') {
                 options = [
+                    { value: '0.05', text: '5% Compression' },
+                    { value: '0.1', text: '10% Compression' },
                     { value: '0.3', text: '30% Compression' },
                     { value: '0.5', text: '50% Compression' },
                     { value: '0.7', text: '70% Compression' }

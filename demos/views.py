@@ -8,7 +8,7 @@ if platform.system() == "Darwin":
 
 from .models import Video
 from .forms import VideoForm
-
+from django.conf import settings  
 import cv2
 import json
 import numpy as np
@@ -21,6 +21,8 @@ import queue
 from datetime import datetime
 from django.http import JsonResponse
 from django.core.cache import cache
+import glob
+from pathlib import Path
 
 
 # 전역 변수로 모델을 로드합니다.
@@ -197,9 +199,9 @@ def process_video_data(video_path):
 
     new_video_data = np.round(video_data, 5)
 
-    video_weight = 0.4  # 초기값
+    video_weight = 0.65  # 초기값
     audio_weight = 1 - video_weight
-    threshold = 0.8
+    threshold = 0.7
 
     ensemble_output, ensemble_scores = compute_ensemble(new_video_data, new_audio_data, video_weight, audio_weight, threshold)
     print('ensemble_output:', ensemble_output)
@@ -214,6 +216,8 @@ def process_video_data(video_path):
 def process_video_data_after(video_path, video_weight, threshold, video_length, ratio):
     new_video_data = cache.get('new_video_data')
     new_audio_data = cache.get('new_audio_data')
+    print("cache Contents")
+    print(new_video_data)
     print("cached")
 
     if new_video_data is None or new_audio_data is None:
@@ -225,7 +229,7 @@ def process_video_data_after(video_path, video_weight, threshold, video_length, 
     sorted_data = get_max_values_and_indices(new_video_data, new_audio_data, video_weight, audio_weight, threshold, video_length, ratio)
 
     current_time = str(datetime.now().strftime("%Y%m%d_%H%M%S")) + ".mp4"
-    output_path = os.path.join("/Users/idaeho/Documents/GitHub/ai_capstone/output_video", current_time)
+    output_path = os.path.join("/Users/idaeho/Documents/GitHub/ai_capstone/media/output_video", current_time)
 
     print("video processing")
     preprocess_shorts_only_frame(video_path, sorted_data, output_path)
@@ -237,6 +241,7 @@ def process_video_data_after(video_path, video_weight, threshold, video_length, 
 
     return ensemble_output
 
+
 def upload_video(request):
     if request.method == 'POST':
         form = VideoForm(request.POST, request.FILES)
@@ -244,23 +249,65 @@ def upload_video(request):
             video = form.save()
             video_file_path = video.input_video.path
 
+            # Extract and save the first frame of the video
+            first_frame_path = os.path.join(settings.MEDIA_ROOT, f'frame_{video.id}.jpg')
+            extract_first_frame(video_file_path, first_frame_path)
+
             predictions = process_video_data(video_file_path)
-            
-            # print(predictions)
-            # ensemble_output: [(15, 2, 0.36038999897956847)]
-            
-            if type(predictions) == list:
-                highlight_data_json = json.dumps(predictions)
-            else:
-                highlight_data_json = json.dumps(predictions.tolist())
+            highlight_data_json = json.dumps(predictions, default=lambda o: o.__dict__ if hasattr(o, '__dict__') else str(o))
+
+            # Fetch latest videos and their first frames
+            video_dir = os.path.join(settings.MEDIA_ROOT, 'output_video')
+            latest_videos = get_latest_videos(video_dir, 2)
+
+            first_frame_paths = []
+            for video_path in latest_videos:
+                video_name = Path(video_path).stem
+                first_frame_path = os.path.join(settings.MEDIA_ROOT, f'{video_name}.jpg')
+                extract_first_frame(video_path, first_frame_path)
+                first_frame_paths.append(settings.MEDIA_URL + f'{video_name}.jpg')
 
             return render(request, 'display_video.html', {
                 'video': video,
-                'highlightData': highlight_data_json
+                'highlightData': highlight_data_json,
+                'first_frame_url': settings.MEDIA_URL + f'frame_{video.id}.jpg',  # URL for the first frame image
+                'first_frame_urls': first_frame_paths  # First frames of the latest videos
             })
     else:
         form = VideoForm()
-    return render(request, 'upload_video.html', {'form': form})
+
+        # Fetch latest videos and their first frames for the homepage
+        video_dir = os.path.join(settings.MEDIA_ROOT, 'output_video')
+        latest_videos = get_latest_videos(video_dir, 5)
+
+        first_frame_paths = []
+        for video_path in latest_videos:
+            video_name = Path(video_path).stem
+            first_frame_path = os.path.join(settings.MEDIA_ROOT, f'{video_name}.jpg')
+            extract_first_frame(video_path, first_frame_path)
+            first_frame_paths.append(settings.MEDIA_URL + f'{video_name}.jpg')
+
+        return render(request, 'upload_video.html', {
+            'form': form,
+            'first_frame_urls': first_frame_paths  # First frames of the latest videos
+        })
+
+def display_video_thumbnails(request):
+    video_dir = '/Users/idaeho/Documents/GitHub/ai_capstone/media/output_video'
+    latest_videos = get_latest_videos(video_dir, 2)
+
+    # Extract and save the first frame of each video
+    first_frame_paths = []
+    for video_path in latest_videos:
+        video_name = Path(video_path).stem
+        first_frame_path = os.path.join(settings.MEDIA_ROOT, f'{video_name}.jpg')
+        extract_first_frame(video_path, first_frame_path)
+        first_frame_paths.append(settings.MEDIA_URL + f'{video_name}.jpg')
+
+    return render(request, 'display_video.html', {
+        'first_frame_urls': first_frame_paths
+    })
+
 
 def display_video(request, video_id):
     video = get_object_or_404(Video, pk=video_id)
@@ -326,3 +373,18 @@ def convert_to_serializable(obj):
         return obj.tolist()
     else:
         return obj
+    
+    
+    
+#썸네일 뽑기 위한 최근 동영상 2개
+def get_latest_videos(video_dir, n=2):
+    list_of_files = glob.glob(os.path.join(video_dir, '*.mp4'))
+    latest_files = sorted(list_of_files, key=os.path.getmtime, reverse=True)[:n]
+    return latest_files
+
+def extract_first_frame(video_path, output_path):
+    vidcap = cv2.VideoCapture(video_path)
+    success, image = vidcap.read()
+    if success:
+        cv2.imwrite(output_path, image)
+    vidcap.release()

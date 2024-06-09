@@ -23,6 +23,8 @@ urlpatterns = [
     path('upload/', views.upload_video, name='upload_video'),
     path('video/<int:video_id>/', views.display_video, name='display_video'),
     path('process_weights/<int:video_id>/', views.process_weights, name='process_weights'),
+    path('thumbnails/', views.display_video_thumbnails, name='display_video_thumbnails'),
+
 ]
 
 from django.conf import settings
