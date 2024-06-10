@@ -332,18 +332,18 @@ def process_weights(request, video_id):
         
         if video_categories == 'shorts':
             video_length = int(video_length)
-            video_weight = 0.6
+            video_weight = 0.45
             threshold = 0.6
             
         elif video_categories == 'summary':
             video_length = int(video_length)
-            video_weight = 0.8
+            video_weight = 0.35
             threshold = 0.5
             
         else:
             ratio = float(video_length)
             video_length = -1
-            video_weight = 0.9
+            video_weight = 0.55
             threshold = 0.6
 
 
